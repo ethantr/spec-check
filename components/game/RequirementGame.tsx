@@ -32,6 +32,9 @@ export function RequirementGame({
 
     const [round, setRound] = useState(1);
 
+    const [isCustom, setIsCustom] = useState(false);
+    const [customRequirement, setCustomRequirement] = useState("");
+
     async function handleLock(playerPrediction: PlayerPrediction) {
         setPrediction(playerPrediction);
         setIsLoading(true);
@@ -104,12 +107,59 @@ export function RequirementGame({
 
                 <article className="py-12 md:py-16">
                     <p className="mb-8 font-mono text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                        Requirement
+                        {isCustom ? "Your requirement" : "Requirement"}
                     </p>
 
-                    <h2 className="font-heading text-3xl leading-[1.15] tracking-tight md:text-5xl">
-                        “{requirement.requirement}”
-                    </h2>
+                    {isCustom ? (
+                        <div className="space-y-5">
+                            <textarea
+                                value={customRequirement}
+                                onChange={(event) => setCustomRequirement(event.target.value)}
+                                placeholder="Paste one software requirement..."
+                                rows={4}
+                                maxLength={500}
+                                className="w-full resize-none border border-border bg-transparent p-4 font-heading text-2xl leading-[1.2] outline-none placeholder:text-muted-foreground/50 focus:border-foreground md:text-3xl"
+                                autoFocus
+                            />
+
+                            <div className="flex items-center justify-between">
+                                <span className="font-mono text-xs text-muted-foreground">
+                                    {customRequirement.length}/500
+                                </span>
+
+                                <button
+                                    type="button"
+                                    disabled={!customRequirement.trim()}
+                                    onClick={() => {
+                                        setRequirement({
+                                            id: "custom",
+                                            requirement: customRequirement.trim(),
+                                        });
+                                        setIsCustom(false);
+                                        setPrediction(null);
+                                        setEvaluation(null);
+                                    }}
+                                    className="font-mono text-xs font-medium uppercase tracking-[0.15em] underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Check requirement →
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <h2 className="font-heading text-3xl leading-[1.1] tracking-tight md:text-5xl">
+                                “{requirement.requirement}”
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsCustom(true)}
+                                className="mt-8 font-mono text-xs uppercase tracking-[0.15em] text-muted-foreground underline underline-offset-4 hover:text-foreground hover:no-underline"
+                            >
+                                Use my own requirement →
+                            </button>
+                        </>
+                    )}
                 </article>
 
                 <div className="border-t border-border" />
