@@ -5,4 +5,4 @@ export default function Home() {
   const requirement = chooseRequirement();
 
   return <RequirementGame requirement={requirement} />;
-}
+} 

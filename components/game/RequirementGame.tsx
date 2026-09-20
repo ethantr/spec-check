@@ -4,125 +4,157 @@ import { useState } from "react";
 
 import { EvaluationReveal } from "@/components/game/EvaluationReveal";
 import {
-  PredictionControls,
-  type PlayerPrediction,
+    PredictionControls,
+    type PlayerPrediction,
 } from "@/components/game/PredictionControls";
 import type { GameEvaluation } from "@/lib/game/types";
 
 export type RequirementGameProps = {
-  requirement: {
-    id: string;
-    requirement: string;
-  };
+    requirement: {
+        id: string;
+        requirement: string;
+    };
 };
 
-export function RequirementGame({ requirement }: RequirementGameProps) {
-  const [prediction, setPrediction] =
-    useState<PlayerPrediction | null>(null);
+export function RequirementGame({
+    requirement: initialRequirement,
+}: RequirementGameProps) {
+    const [requirement, setRequirement] = useState(initialRequirement);
 
-  const [evaluation, setEvaluation] =
-    useState<GameEvaluation | null>(null);
+    const [prediction, setPrediction] =
+        useState<PlayerPrediction | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
+    const [evaluation, setEvaluation] =
+        useState<GameEvaluation | null>(null);
 
-  async function handleLock(playerPrediction: PlayerPrediction) {
-    setPrediction(playerPrediction);
-    setIsLoading(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingNext, setIsLoadingNext] = useState(false);
 
-    try {
-      const response = await fetch("/api/requirements/evaluate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          requirement: requirement.requirement,
-        }),
-      });
+    const [round, setRound] = useState(1);
 
-      if (!response.ok) {
-        throw new Error("Failed to evaluate requirement");
-      }
+    async function handleLock(playerPrediction: PlayerPrediction) {
+        setPrediction(playerPrediction);
+        setIsLoading(true);
 
-      const result: GameEvaluation = await response.json();
+        try {
+            const response = await fetch("/api/requirements/evaluate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    requirement: requirement.requirement,
+                }),
+            });
 
-      setEvaluation(result);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+            if (!response.ok) {
+                throw new Error("Failed to evaluate requirement");
+            }
+
+            const result: GameEvaluation = await response.json();
+
+            setEvaluation(result);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }
 
-  function handlePlayAgain() {
-    setPrediction(null);
-    setEvaluation(null);
-  }
+    async function handleNextRequirement() {
+        setIsLoadingNext(true);
 
-  const isLocked = prediction !== null;
+        try {
+            const response = await fetch("/api/requirements/next", {
+                method: "POST",
+            });
 
-  return (
-    <main className="min-h-screen px-6 py-8 md:px-10 md:py-12">
-      <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <header className="flex items-baseline justify-between border-b border-border pb-4">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight">
-            Spec Check
-          </h1>
+            if (!response.ok) {
+                throw new Error("Failed to load next requirement");
+            }
 
-          <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Round 01
-          </span>
-        </header>
+            const nextRequirement: typeof requirement =
+                await response.json();
 
-        {/* Requirement */}
-        <article className="py-20 md:py-28">
-          <p className="mb-8 font-mono text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Requirement
-          </p>
+            setRequirement(nextRequirement);
+            setPrediction(null);
+            setEvaluation(null);
+            setRound((current) => current + 1);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoadingNext(false);
+        }
+    }
 
-          <h2 className="font-heading text-4xl leading-[1.1] tracking-tight md:text-6xl">
-            “{requirement.requirement}”
-          </h2>
-        </article>
+    const isLocked = prediction !== null;
 
-        <div className="border-t border-border" />
+    return (
+        <main className="min-h-screen px-6 py-8 md:px-10 md:py-12">
+            <div className="mx-auto max-w-4xl">
+                <header className="flex items-baseline justify-between border-b border-border pb-4">
+                    <h1 className="font-heading text-2xl font-semibold tracking-tight">
+                        Spec Check
+                    </h1>
 
-        {/* Judgement */}
-        {!isLocked && (
-          <div className="py-12 md:py-16">
-            <PredictionControls onLock={handleLock} />
-          </div>
-        )}
+                    <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Round {String(round).padStart(2, "0")}
+                    </span>
+                </header>
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="border-t border-border py-8">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Jev is analysing...
-            </p>
-          </div>
-        )}
+                <article className="py-12 md:py-16">
+                    <p className="mb-8 font-mono text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                        Requirement
+                    </p>
 
-        {/* Locked / Reveal */}
-        {prediction && evaluation && !isLoading && (
-          <div className="py-12 md:py-16">
-            <EvaluationReveal
-              prediction={prediction}
-              evaluation={evaluation}
-              onPlayAgain={handlePlayAgain}
-            />
-          </div>
-        )}
+                    <h2 className="font-heading text-3xl leading-[1.15] tracking-tight md:text-5xl">
+                        “{requirement.requirement}”
+                    </h2>
+                </article>
 
-        {prediction && !evaluation && !isLoading && (
-          <div className="py-8">
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Your prediction is locked.
-            </p>
-          </div>
-        )}
-      </div>
-    </main>
-  );
+                <div className="border-t border-border" />
+
+                {!isLocked && (
+                    <div className="py-12 md:py-16">
+                        <PredictionControls onLock={handleLock} />
+                    </div>
+                )}
+
+                {isLoading && (
+                    <div className="border-t border-border py-8">
+                        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Jev is analysing...
+                        </p>
+                    </div>
+                )}
+
+                {prediction && evaluation && !isLoading && (
+                    <div className="py-12 md:py-16">
+                        <EvaluationReveal
+                            prediction={prediction}
+                            evaluation={evaluation}
+                            onPlayAgain={handleNextRequirement}
+                        />
+                    </div>
+                )}
+
+                {prediction && !evaluation && !isLoading && (
+                    <div className="py-8">
+                        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Your prediction is locked.
+                        </p>
+                    </div>
+                )}
+
+                {isLoadingNext && (
+                    <div className="border-t border-border py-8">
+                        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Loading next requirement...
+                        </p>
+                    </div>
+                )}
+            </div>
+        </main>
+    );
 }
+

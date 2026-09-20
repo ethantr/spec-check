@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   RadioGroup,
   RadioGroupItem,
@@ -53,6 +52,12 @@ export function PredictionControls({
   const [classification, setClassification] = useState<
     RequirementClassification | ""
   >("");
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [confidence, setConfidence] =
     useState<Prediction>(initialConfidence);
@@ -108,12 +113,11 @@ export function PredictionControls({
           >
             <div
               className={[
-                "flex min-h-20 items-center gap-4 border border-border px-5",
+                "flex min-h-20 items-center gap-4 border px-5",
                 "transition-colors",
-                "hover:bg-muted/50",
                 classification === option
                   ? "border-foreground bg-muted"
-                  : "",
+                  : "border-border hover:border-foreground/50 hover:bg-muted/30",
               ].join(" ")}
             >
               <RadioGroupItem
@@ -124,9 +128,9 @@ export function PredictionControls({
 
               <span
                 className={[
-                  "font-heading text-2xl",
+                  "font-heading text-2xl transition-transform",
                   classification === option
-                    ? "text-accent"
+                    ? "text-accent scale-110"
                     : "text-muted-foreground",
                 ].join(" ")}
               >
@@ -147,12 +151,13 @@ export function PredictionControls({
             Confidence
           </p>
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            How plausible is each classification?
+          <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
+            Give each classification an independent confidence. They do not need to
+            add up to 100%.
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-7">
           {classifications.map((option) => (
             <div key={option} className="grid gap-3 md:grid-cols-[150px_1fr_48px] md:items-center">
               <span className="text-sm">
@@ -170,7 +175,7 @@ export function PredictionControls({
                 aria-label={`${labels[option]} confidence`}
               />
 
-              <span className="font-mono text-right text-xs tabular-nums">
+              <span className="min-w-12 font-mono text-right text-xs tabular-nums text-muted-foreground">
                 {confidence[option]}%
               </span>
             </div>
@@ -179,15 +184,14 @@ export function PredictionControls({
       </div>
 
       <div className="flex justify-end border-t border-border pt-6">
-        <Button
+        <button
           type="button"
-          size="lg"
           onClick={handleLock}
-          disabled={classification === null}
+          disabled={!isMounted || classification === ""}
           className="font-mono text-xs uppercase tracking-[0.15em]"
         >
           Lock in →
-        </Button>
+        </button>
       </div>
     </section>
   );
