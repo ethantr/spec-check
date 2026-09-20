@@ -2,7 +2,7 @@
 
 Can AI tell when a software requirement is actually well specified?
 
-I built this as a small experiment around [Jev](https://vercel.com/ai-gateway/models/jev).
+I built this as a small experiment around [Jev](https://typesafe.ai).
 
 You get shown a software requirement and have to decide whether it's:
 
